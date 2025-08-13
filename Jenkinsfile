@@ -33,7 +33,6 @@ tools {
                 }
             }
         }
-    }
     post {
         always {
             archiveArtifacts artifacts: 'target/*.war', allowEmptyArchive: true 
@@ -58,4 +57,5 @@ stage('Upload to Nexus') {
                 version: '1.0'
             }
         }
+}
 }
