@@ -1,22 +1,27 @@
 pipeline {
     agent any
-tools {
+
+    tools {
         maven 'maven' // Name configured in Jenkins Global Tool Configuration
     }
+
     environment {
         NEXUS_CRED = credentials('nexus')
     }
+
     stages {
         stage('Checkout') {
             steps {
                 git url: 'https://github.com/AsueDerick/AsueDerick-DevOps-Project-01-Java-Login-app.git', branch: 'main'
             }
         }
+
         stage('Build') {
             steps {
                 sh 'mvn clean package'
             }
         }
+
         stage('Test') {
             steps {
                 sh 'mvn test'
@@ -33,14 +38,8 @@ tools {
                 }
             }
         }
-    post {
-        always {
-            archiveArtifacts artifacts: 'target/*.war', allowEmptyArchive: true 
-            junit 'target/surefire-reports/*.xml'
-        }
-    }
 
-stage('Upload to Nexus') {
+        stage('Upload to Nexus') {
             steps {
                 nexusArtifactUploader artifacts: [[
                     artifactId: 'dptweb',
@@ -57,5 +56,18 @@ stage('Upload to Nexus') {
                 version: '1.0'
             }
         }
+    }
+
+    post {
+        always {
+            archiveArtifacts artifacts: 'target/*.war', allowEmptyArchive: true
+            junit 'target/surefire-reports/*.xml'
+        }
+    }
 }
-}
+// Jenkinsfile for Java Login App project
+// This file defines the CI/CD pipeline for building, testing, and deploying the Java Login App
+// It includes stages for checkout, build, test, SonarQube analysis, and uploading to Nexus
+// The pipeline uses Maven for building and testing, and integrates with SonarQube for code quality analysis
+// It also uploads the built artifact to a Nexus repository
+// The pipeline is configured to run on any available agent and uses credentials stored in Jenkins for Nexus
