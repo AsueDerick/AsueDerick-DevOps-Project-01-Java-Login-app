@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     tools {
-        maven 'maven' // Name configured in Jenkins Global Tool Configuration
+        maven 'maven'
     }
 
     environment {
@@ -16,9 +16,20 @@ pipeline {
             }
         }
 
+        stage('Set Version') {
+            steps {
+                script {
+                    // Get short Git commit hash (e.g. 'a1b2c3d')
+                    def gitCommit = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+                    env.BUILD_VERSION = "1.0.0-${gitCommit}"
+                    echo "Build version set to ${env.BUILD_VERSION}"
+                }
+            }
+        }
+
         stage('Build') {
             steps {
-                sh 'mvn clean package'
+                sh "mvn clean package -Drevision=${env.BUILD_VERSION}"
             }
         }
 
@@ -28,13 +39,10 @@ pipeline {
             }
         }
 
-        stage('Build & SonarQube Analysis') {
+        stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('sonar') {
-                    sh 'mvn clean verify sonar:sonar ' +
-                       '-Dsonar.projectKey=JavaLoginApp ' +
-                       '-Dsonar.projectName="Java Login App" ' +
-                       '-Dsonar.projectVersion=1.0'
+                    sh "mvn sonar:sonar -Dsonar.projectVersion=${env.BUILD_VERSION} -Dsonar.projectKey=JavaLoginApp -Dsonar.projectName='Java Login App'"
                 }
             }
         }
@@ -44,7 +52,7 @@ pipeline {
                 nexusArtifactUploader artifacts: [[
                     artifactId: 'dptweb',
                     classifier: '',
-                    file: 'target/dptweb-1.0.war',
+                    file: "target/dptweb-${env.BUILD_VERSION}.war",
                     type: 'war'
                 ]],
                 credentialsId: 'nexus',
@@ -53,21 +61,15 @@ pipeline {
                 nexusVersion: 'nexus3',
                 protocol: 'http',
                 repository: 'sample',
-                version: '1.0'
+                version: "${env.BUILD_VERSION}"
             }
         }
     }
 
     post {
         always {
-            archiveArtifacts artifacts: 'target/*.war', allowEmptyArchive: true
+            archiveArtifacts artifacts: "target/dptweb-${env.BUILD_VERSION}.war", allowEmptyArchive: true
             junit 'target/surefire-reports/*.xml'
         }
     }
 }
-// Jenkinsfile for Java Login App project
-// This file defines the CI/CD pipeline for building, testing, and deploying the Java Login App
-// It includes stages for checkout, build, test, SonarQube analysis, and uploading to Nexus
-// The pipeline uses Maven for building and testing, and integrates with SonarQube for code quality analysis
-// It also uploads the built artifact to a Nexus repository
-// The pipeline is configured to run on any available agent and uses credentials stored in Jenkins for Nexus
