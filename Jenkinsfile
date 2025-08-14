@@ -10,6 +10,7 @@ pipeline {
         DOCKER_CRED_ID  = 'docker'
         DOCKER_REGISTRY = 'docker.io'
         DOCKER_IMAGE    = 'asue1/dptweb'
+        AWS_REGION     = 'ap-southeast-2'
     }
 
     stages {
