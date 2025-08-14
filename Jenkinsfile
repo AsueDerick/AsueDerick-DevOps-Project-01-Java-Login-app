@@ -7,6 +7,8 @@ pipeline {
 
     environment {
         NEXUS_CRED = credentials('nexus')
+        DOCKER_CRED_ID = 'docker'
+        DOCKER_IMAGE = 'asue1/dptweb'
         BUILD_VERSION = ""
     }
 
@@ -27,7 +29,7 @@ pipeline {
             }
         }
 
-        stage('Build') {
+        stage('Build WAR') {
             steps {
                 sh "mvn clean package -Drevision=${env.BUILD_VERSION} -DskipTests"
             }
@@ -55,7 +57,7 @@ pipeline {
         stage('Upload to Nexus') {
             steps {
                 script {
-                    // Find the generated WAR file dynamically
+                    // Dynamically find the generated WAR
                     def warFile = sh(script: "ls target/dptweb-*.war", returnStdout: true).trim()
                     echo "Uploading WAR file: ${warFile}"
 
@@ -74,6 +76,27 @@ pipeline {
                         repository: 'sample',
                         version: "${env.BUILD_VERSION}"
                     )
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    def warFile = sh(script: "ls target/dptweb-*.war", returnStdout: true).trim()
+                    sh "docker build --build-arg WAR_FILE=${warFile} -t ${DOCKER_IMAGE}:${env.BUILD_VERSION} ."
+                }
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: "${DOCKER_CRED_ID}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh """
+                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                        docker push ${DOCKER_IMAGE}:${env.BUILD_VERSION}
+                        docker logout
+                    """
                 }
             }
         }
