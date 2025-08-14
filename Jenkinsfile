@@ -115,25 +115,16 @@ pipeline {
                 }
             }
         }
-
-    // Uncomment if you want to deploy IPv6 VPC via CloudFormation
-    // stage('Provision IPv6 VPC') {
-    //     steps {
-    //         withCredentials([usernamePassword(
-    //             credentialsId: 'aws-creds',
-    //             usernameVariable: 'AWS_ACCESS_KEY_ID',
-    //             passwordVariable: 'AWS_SECRET_ACCESS_KEY'
-    //         )]) {
-    //             sh """
-    //                 aws cloudformation deploy \
-    //                     --template-file amazon-eks-ipv6-vpc-public-private-subnets.yaml \
-    //                     --stack-name my-stack \
-    //                     --region ${AWS_REGION} \
-    //                     --capabilities CAPABILITY_NAMED_IAM
-    //             """
-    //         }
-    //     }
-    // }
+        stage('Deploy to EKS') {
+            steps {
+                script {
+                    sh '''
+                        aws eks --region ap-southeast-2 update-kubeconfig --name my-cluster
+                        kubectl apply -f nginx-deployment.yaml
+                    '''
+                }
+            }
+        }
     }
 
     post {
