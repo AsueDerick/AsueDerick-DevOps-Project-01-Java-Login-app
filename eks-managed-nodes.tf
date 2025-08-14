@@ -41,7 +41,7 @@ module "eks" {
   # Optional: Adds the current caller identity as an administrator via cluster access entry
   enable_cluster_creator_admin_permissions = true
 
-  vpc_id                   = data.aws_cloudformation_stack.vpc.outputs["VpcId"]
+  vpc_id                   = local.vpc_id
   subnet_ids               = local.private_subnets
   control_plane_subnet_ids = local.private_subnets
 
