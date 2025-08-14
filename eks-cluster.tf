@@ -4,8 +4,12 @@ provider "kubernetes" {
   token = data.aws_eks_cluster_auth.myapp-cluster.token
   cluster_ca_certificate = base64decode(data.aws_eks_cluster.myapp-cluster.certificate_authority[0].data)
 }
-data "aws_eks_cluster" "myapp-cluster" {
-  name = module.eks.cluster_name
+resource "aws_eks_cluster" "myapp-cluster" {
+  name     = "my-cluster"
+  role_arn = aws_iam_role.eks_cluster_role.arn
+  vpc_config {
+    subnet_ids = aws_subnet.eks[*].id
+  }
 }
 
 data "aws_eks_cluster_auth" "myapp-cluster" {
