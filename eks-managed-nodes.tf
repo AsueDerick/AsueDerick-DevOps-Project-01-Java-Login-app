@@ -1,6 +1,9 @@
 provider "aws" {
   region = "ap-southeast-2" 
 }
+data "aws_cloudformation_stack" "vpc" {
+  name = "my-stack"
+}
 # Get VPC ID
 locals {
   vpc_id = lookup(
