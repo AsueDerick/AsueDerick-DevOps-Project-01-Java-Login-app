@@ -1,6 +1,15 @@
 provider "aws" {
   region = "ap-southeast-2" 
 }
+# Fetch CloudFormation stack outputs
+data "aws_cloudformation_stack" "vpc" {
+  name = "my-stack"
+}
+
+# Extract private subnets as a list
+locals {
+  private_subnets = split(",", data.aws_cloudformation_stack.vpc.outputs["SubnetsPrivate"])
+}
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "~> 21.0"
@@ -25,9 +34,9 @@ module "eks" {
   # Optional: Adds the current caller identity as an administrator via cluster access entry
   enable_cluster_creator_admin_permissions = true
 
-  vpc_id                   = "vpc-0f4e274fe05ddcbe8"
-  subnet_ids               = ["subnet-0dea324a0b556f7d7","ssubnet-080409abd081ccbb7"]
-  control_plane_subnet_ids = ["subnet-0dea324a0b556f7d7","subnet-080409abd081ccbb7"]
+  vpc_id                   = data.aws_cloudformation_stack.vpc.outputs["VpcId"]
+  subnet_ids               = local.private_subnets
+  control_plane_subnet_ids = local.private_subnets
 
   # EKS Managed Node Group(s)
   eks_managed_node_groups = {
