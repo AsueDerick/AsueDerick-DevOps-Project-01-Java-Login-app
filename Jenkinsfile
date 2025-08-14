@@ -2,13 +2,11 @@ pipeline {
     agent any
 
     tools {
-        maven 'maven' // Jenkins Maven tool name
+        maven 'maven'
     }
 
     environment {
         NEXUS_CRED = credentials('nexus')
-        DOCKER_CRED_ID = 'docker'
-        DOCKER_IMAGE = 'asue1/dptweb'
         BUILD_VERSION = ""
     }
 
@@ -57,7 +55,7 @@ pipeline {
         stage('Upload to Nexus') {
             steps {
                 script {
-                    // Detect generated WAR dynamically
+                    // Find the generated WAR file dynamically
                     def warFile = sh(script: "ls target/dptweb-*.war", returnStdout: true).trim()
                     echo "Uploading WAR file: ${warFile}"
 
@@ -74,28 +72,8 @@ pipeline {
                         nexusVersion: 'nexus3',
                         protocol: 'http',
                         repository: 'sample',
-                        version: env.BUILD_VERSION
+                        version: "${env.BUILD_VERSION}"
                     )
-                }
-            }
-        }
-
-        stage('Build & Push Docker Image') {
-            steps {
-                script {
-                    // Detect generated WAR dynamically
-                    def warFile = sh(script: "ls target/dptweb-*.war", returnStdout: true).trim()
-                    
-                    // Build Docker image
-                    sh "docker build --build-arg WAR_FILE=${warFile} -t ${DOCKER_IMAGE}:${env.BUILD_VERSION} ."
-                }
-
-                withCredentials([usernamePassword(credentialsId: "${DOCKER_CRED_ID}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    sh """
-                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-                        docker push ${DOCKER_IMAGE}:${env.BUILD_VERSION}
-                        docker logout
-                    """
                 }
             }
         }
