@@ -1,13 +1,15 @@
-provider "aws" {
-  region = "ap-southeast-2" 
+provider "kubernetes" {
+  config_path    = "~/.kube/config"
+  host = data.aws_eks_cluster.myapp-cluster.endpoint
+  token = data.aws_eks_cluster_auth.myapp-cluster.token
+  cluster_ca_certificate = base64decode(data.aws_eks_cluster.myapp-cluster.certificate_authority[0].data)
 }
-data "aws_cloudformation_stack" "vpc" {
-  name = "my-stack"
+data "aws_eks_cluster" "myapp-cluster" {
+  name = module.eks.cluster_name
 }
 
-locals {
-  vpc_id          = data.aws_cloudformation_stack.vpc.outputs["VPCID"]  # match exact key
-  private_subnets = split(",", data.aws_cloudformation_stack.vpc.outputs["SubnetsPrivate"])
+data "aws_eks_cluster_auth" "myapp-cluster" {
+  name = module.eks.cluster_name
 }
 
 
@@ -35,16 +37,16 @@ module "eks" {
   # Optional: Adds the current caller identity as an administrator via cluster access entry
   enable_cluster_creator_admin_permissions = true
 
-  vpc_id                   = local.vpc_id
-  subnet_ids               = local.private_subnets
-  control_plane_subnet_ids = local.private_subnets
+  vpc_id                   = module.myapp-vpc.vpc_id
+  subnet_ids               = module.myapp-vpc.private_subnets
+
 
   # EKS Managed Node Group(s)
   eks_managed_node_groups = {
     example = {
       # Starting on 1.30, AL2023 is the default AMI type for EKS managed node groups
       ami_type       = "AL2023_x86_64_STANDARD"
-      instance_types = ["m5.xlarge"]
+      instance_types = ["t2.medium"]
 
       min_size     = 2
       max_size     = 4
@@ -57,3 +59,4 @@ module "eks" {
     Terraform   = "true"
   }
 }
+
