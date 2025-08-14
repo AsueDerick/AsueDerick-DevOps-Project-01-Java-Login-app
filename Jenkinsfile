@@ -56,7 +56,7 @@ pipeline {
             steps {
                 script {
                     // Find the generated WAR file dynamically
-                    def warFile = sh(script: "ls target/dptweb-*.war", returnStdout: true).trim()
+                    def warFile = sh(script: "ls target/*.war", returnStdout: true).trim()
                     echo "Uploading WAR file: ${warFile}"
 
                     nexusArtifactUploader(
