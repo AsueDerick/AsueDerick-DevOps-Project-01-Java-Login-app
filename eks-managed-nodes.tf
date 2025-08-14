@@ -6,8 +6,7 @@ data "aws_cloudformation_stack" "vpc" {
 }
 
 locals {
-  # outputs is already a map, no need to iterate
-  vpc_id          = data.aws_cloudformation_stack.vpc.outputs["VpcId"]
+  vpc_id          = data.aws_cloudformation_stack.vpc.outputs["VPCID"]  # match exact key
   private_subnets = split(",", data.aws_cloudformation_stack.vpc.outputs["SubnetsPrivate"])
 }
 
