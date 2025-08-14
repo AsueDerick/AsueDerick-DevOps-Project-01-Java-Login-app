@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     tools {
-        maven 'maven' // Name configured in Jenkins Global Tool Configuration
+        maven 'maven' // Maven name from Jenkins Global Tool Configuration
     }
 
     environment {
@@ -28,20 +28,9 @@ pipeline {
             }
         }
 
-        stage('Set Version') {
-            steps {
-                script {
-                    // Get short Git commit hash (e.g. 'a1b2c3d')
-                    def gitCommit = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
-                    env.BUILD_VERSION = "1.0.0-${gitCommit}"
-                    echo "Build version set to ${env.BUILD_VERSION}"
-                }
-            }
-        }
-
         stage('Build') {
             steps {
-                sh 'mvn clean package'
+                sh "mvn clean package -DskipTests"
             }
         }
 
@@ -54,43 +43,59 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('sonar') {
-                    sh 'mvn clean verify sonar:sonar ' +
-                       '-Dsonar.projectKey=JavaLoginApp ' +
-                       '-Dsonar.projectName="Java Login App" ' +
-                       '-Dsonar.projectVersion=1.0'
+                    sh """
+                        mvn sonar:sonar \
+                        -Dsonar.projectKey=JavaLoginApp \
+                        -Dsonar.projectName='Java Login App' \
+                        -Dsonar.projectVersion=${VERSION}
+                    """
                 }
             }
         }
 
         stage('Upload to Nexus') {
             steps {
-                nexusArtifactUploader artifacts: [[
-                    artifactId: 'dptweb',
-                    classifier: '',
-                    file: 'target/dptweb-1.0.war',
-                    type: 'war'
-                ]],
-                credentialsId: 'nexus',
-                groupId: 'com.example',
-                nexusUrl: 'localhost:8081',
-                nexusVersion: 'nexus3',
-                protocol: 'http',
-                repository: 'sample',
-                version: '1.0'
+                nexusArtifactUploader(
+                    artifacts: [[
+                        artifactId: 'dptweb',
+                        classifier: '',
+                        file: 'target/*.war',
+                        type: 'war'
+                    ]],
+                    credentialsId: 'nexus',
+                    groupId: 'com.example',
+                    nexusUrl: 'localhost:8081', // Change to your Nexus server IP
+                    nexusVersion: 'nexus3',
+                    protocol: 'http',
+                    repository: 'sample',
+                    version: "${VERSION}"
+                )
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh "docker build -t ${DOCKER_IMAGE}:${VERSION} ."
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: "${DOCKER_CRED_ID}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh """
+                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                        docker push ${DOCKER_IMAGE}:${VERSION}
+                        docker logout
+                    """
+                }
             }
         }
     }
 
     post {
         always {
-            archiveArtifacts artifacts: "target/dptweb-${env.BUILD_VERSION}.war", allowEmptyArchive: true
+            archiveArtifacts artifacts: 'target/*.war', allowEmptyArchive: true
             junit 'target/surefire-reports/*.xml'
         }
     }
 }
-// Jenkinsfile for Java Login App project
-// This file defines the CI/CD pipeline for building, testing, and deploying the Java Login App
-// It includes stages for checkout, build, test, SonarQube analysis, and uploading to Nexus
-// The pipeline uses Maven for building and testing, and integrates with SonarQube for code quality analysis
-// It also uploads the built artifact to a Nexus repository
-// The pipeline is configured to run on any available agent and uses credentials stored in Jenkins for Nexus
