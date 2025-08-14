@@ -62,7 +62,7 @@ pipeline {
                         nexusVersion: 'nexus3',
                         protocol: 'http',
                         repository: 'sample',
-                        version: ''  // Uses the version from POM
+                        version: ''  
                     )
                 }
             }
