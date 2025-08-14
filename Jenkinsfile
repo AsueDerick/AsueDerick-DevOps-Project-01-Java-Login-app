@@ -102,26 +102,27 @@ pipeline {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'aws-creds', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
                     sh 'terraform init'
-                    sh 'terraform plan -out=tfplan'
-                    sh 'terraform apply -auto-approve tfplan'
+                    // sh 'terraform plan -out=tfplan'
+                    // sh 'terraform apply -auto-approve tfplan'
+                    sh 'terraform destroy -auto-approve tfplan'
                 }
             }
         }
 
-        stage('Provision IPv6 VPC') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'aws-creds', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
-                    sh """
-                        aws cloudformation deploy \
-                            --template-file amazon-eks-ipv6-vpc-public-private-subnets.yaml \
-                            --stack-name my-stack \
-                            --region ${AWS_REGION} \
-                            --capabilities CAPABILITY_NAMED_IAM
-                    """
-                }
-            }
-        }
-    }
+    //     stage('Provision IPv6 VPC') {
+    //         steps {
+    //             withCredentials([usernamePassword(credentialsId: 'aws-creds', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+    //                 sh """
+    //                     aws cloudformation deploy \
+    //                         --template-file amazon-eks-ipv6-vpc-public-private-subnets.yaml \
+    //                         --stack-name my-stack \
+    //                         --region ${AWS_REGION} \
+    //                         --capabilities CAPABILITY_NAMED_IAM
+    //                 """
+    //             }
+    //         }
+    //     }
+    // }
 
     post {
         always {
