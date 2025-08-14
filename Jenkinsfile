@@ -43,7 +43,7 @@ pipeline {
             }
         }
 
-        stage('Upload to Nexus') {
+        stage('Upload to Nexus repo') {
             steps {
                 script {
                     def warFile = sh(script: "ls target/*.war", returnStdout: true).trim()
