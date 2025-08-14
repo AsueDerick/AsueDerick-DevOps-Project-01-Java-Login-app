@@ -51,32 +51,6 @@ pipeline {
                 }
             }
         }
-
-        stage('Upload to Nexus') {
-            steps {
-                script {
-                    // Find the generated WAR file dynamically
-                    def warFile = sh(script: "ls target/*.war", returnStdout: true).trim()
-                    echo "Uploading WAR file: ${warFile}"
-
-                    nexusArtifactUploader(
-                        artifacts: [[
-                            artifactId: 'dptweb',
-                            classifier: '',
-                            file: warFile,
-                            type: 'war'
-                        ]],
-                        credentialsId: 'nexus',
-                        groupId: 'com.example',
-                        nexusUrl: 'localhost:8081',
-                        nexusVersion: 'nexus3',
-                        protocol: 'http',
-                        repository: 'sample',
-                        version: "${env.BUILD_VERSION}"
-                    )
-                }
-            }
-        }
     }
 
     post {
