@@ -2,40 +2,40 @@ pipeline {
     agent any
 
     tools {
-        maven 'maven' // Maven from Jenkins Global Tool Configuration
+        maven 'maven'
     }
 
     environment {
-        // Credentials
         NEXUS_CRED = credentials('nexus')
-        DOCKER_CRED_ID = 'docker'
-        DOCKER_IMAGE = 'asue1/dptweb'
-
-        // Versioning: Git SHA + Jenkins build number
-        VERSION = ""
+        BUILD_VERSION = ""  // Will be set dynamically from Git commit
     }
 
     stages {
         stage('Checkout') {
             steps {
-                script {
-                    git url: 'https://github.com/AsueDerick/AsueDerick-DevOps-Project-01-Java-Login-app.git', branch: 'main'
-                    def commitHash = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
-                    env.VERSION = "${commitHash}-${env.BUILD_NUMBER}"
-                    echo "Build Version: ${env.VERSION}"
-                }
+                git url: 'https://github.com/AsueDerick/AsueDerick-DevOps-Project-01-Java-Login-app.git', branch: 'main'
             }
         }
 
-        stage('Build WAR') {
+        stage('Set Version') {
             steps {
                 script {
-                    sh "mvn clean package -Drevision=${env.VERSION} -DskipTests"
+                    // Get short Git commit hash
+                    def gitCommit = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+                    env.BUILD_VERSION = "1.0.0-${gitCommit}"
+                    echo "Build version set to ${env.BUILD_VERSION}"
                 }
             }
         }
 
-        stage('Run Tests') {
+        stage('Build') {
+            steps {
+                // Build WAR using Maven with dynamic revision
+                sh "mvn clean package -Drevision=${env.BUILD_VERSION} -DskipTests"
+            }
+        }
+
+        stage('Test') {
             steps {
                 sh "mvn test"
             }
@@ -48,7 +48,7 @@ pipeline {
                         mvn sonar:sonar \
                         -Dsonar.projectKey=JavaLoginApp \
                         -Dsonar.projectName='Java Login App' \
-                        -Dsonar.projectVersion=${env.VERSION}
+                        -Dsonar.projectVersion=${env.BUILD_VERSION}
                     """
                 }
             }
@@ -60,7 +60,7 @@ pipeline {
                     artifacts: [[
                         artifactId: 'dptweb',
                         classifier: '',
-                        file: 'target/dptweb-*.war', // wildcard for dynamic WAR
+                        file: 'target/dptweb-*.war', // use wildcard to match versioned WAR
                         type: 'war'
                     ]],
                     credentialsId: 'nexus',
@@ -69,26 +69,8 @@ pipeline {
                     nexusVersion: 'nexus3',
                     protocol: 'http',
                     repository: 'sample',
-                    version: "${env.VERSION}"
+                    version: "${env.BUILD_VERSION}"
                 )
-            }
-        }
-
-        stage('Build Docker Image') {
-            steps {
-                sh "docker build --build-arg WAR_FILE=target/dptweb-*.war -t ${DOCKER_IMAGE}:${env.VERSION} ."
-            }
-        }
-
-        stage('Push Docker Image') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: "${DOCKER_CRED_ID}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    sh """
-                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-                        docker push ${DOCKER_IMAGE}:${env.VERSION}
-                        docker logout
-                    """
-                }
             }
         }
     }
