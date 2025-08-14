@@ -120,8 +120,8 @@ pipeline {
                             --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
 
                         PUBLIC_SUBNETS=$(aws cloudformation describe-stacks --region ap-southeast-2 --stack-name eks-ipv6-vpc --query "Stacks[].Outputs[?OutputKey=='SubnetsPublic'].OutputValue" --output text)
-                        for subnet in $(echo $PUBLIC_SUBNETS | tr ',' ' '); do
-                            aws ec2 modify-subnet-attribute --region ap-southeast-2 --subnet-id $subnet --assign-ipv6-address-on-creation
+                        for subnet in $(echo \$PUBLIC_SUBNETS | tr ',' ' '); do
+                            aws ec2 modify-subnet-attribute --region ap-southeast-2 --subnet-id \$subnet --assign-ipv6-address-on-creation
                         done
                     """
                 }
