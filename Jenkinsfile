@@ -2,17 +2,16 @@ pipeline {
     agent any
 
     tools {
-        maven 'maven' // Maven name from Jenkins Global Tool Configuration
+        maven 'maven' // Maven from Jenkins Global Tool Configuration
     }
 
     environment {
         // Credentials
         NEXUS_CRED = credentials('nexus')
-        DOCKER_REGISTRY = 'docker.io'
-        DOCKER_IMAGE = 'asue1/dptweb'
         DOCKER_CRED_ID = 'docker'
+        DOCKER_IMAGE = 'asue1/dptweb'
 
-        // Versioning: will be set dynamically from Git + Jenkins build number
+        // Versioning: Git SHA + Jenkins build number
         VERSION = ""
     }
 
@@ -31,7 +30,6 @@ pipeline {
         stage('Build WAR') {
             steps {
                 script {
-                    // Build WAR with Maven and dynamic revision
                     sh "mvn clean package -Drevision=${env.VERSION} -DskipTests"
                 }
             }
@@ -50,7 +48,7 @@ pipeline {
                         mvn sonar:sonar \
                         -Dsonar.projectKey=JavaLoginApp \
                         -Dsonar.projectName='Java Login App' \
-                        -Dsonar.projectVersion=${VERSION}
+                        -Dsonar.projectVersion=${env.VERSION}
                     """
                 }
             }
@@ -62,23 +60,23 @@ pipeline {
                     artifacts: [[
                         artifactId: 'dptweb',
                         classifier: '',
-                        file: 'target/dptweb-*.war',  // wildcard for generated WAR
+                        file: 'target/dptweb-*.war', // wildcard for dynamic WAR
                         type: 'war'
                     ]],
                     credentialsId: 'nexus',
                     groupId: 'com.example',
-                    nexusUrl: 'localhost:8081', // change if needed
+                    nexusUrl: 'localhost:8081',
                     nexusVersion: 'nexus3',
                     protocol: 'http',
                     repository: 'sample',
-                    version: "${VERSION}"
+                    version: "${env.VERSION}"
                 )
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh "docker build --build-arg WAR_FILE=target/dptweb-*.war -t ${DOCKER_IMAGE}:${VERSION} ."
+                sh "docker build --build-arg WAR_FILE=target/dptweb-*.war -t ${DOCKER_IMAGE}:${env.VERSION} ."
             }
         }
 
@@ -87,7 +85,7 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: "${DOCKER_CRED_ID}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                     sh """
                         echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-                        docker push ${DOCKER_IMAGE}:${VERSION}
+                        docker push ${DOCKER_IMAGE}:${env.VERSION}
                         docker logout
                     """
                 }
