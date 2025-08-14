@@ -46,7 +46,7 @@ pipeline {
         stage('Upload to Nexus') {
             steps {
                 script {
-                    def warFile = sh(script: "ls target/dptweb-*.war", returnStdout: true).trim()
+                    def warFile = sh(script: "ls target/*.war", returnStdout: true).trim()
                     echo "Uploading WAR file: ${warFile}"
 
                     nexusArtifactUploader(
@@ -89,7 +89,7 @@ pipeline {
 
     post {
         always {
-            archiveArtifacts artifacts: 'target/dptweb-*.war', allowEmptyArchive: true
+            archiveArtifacts artifacts: 'target/*.war', allowEmptyArchive: true
             junit 'target/surefire-reports/*.xml'
         }
     }
