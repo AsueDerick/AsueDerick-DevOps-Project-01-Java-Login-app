@@ -103,8 +103,8 @@ pipeline {
                 dir('terraform') {
                     withCredentials([usernamePassword(credentialsId: 'aws-creds', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
                         sh 'terraform init'
-                    // sh 'terraform plan -out=tfplan'
-                    // sh 'terraform apply -auto-approve tfplan'
+                        sh 'terraform plan -out=tfplan'
+                        sh 'terraform apply -auto-approve tfplan'
                     }
                 }
             }
