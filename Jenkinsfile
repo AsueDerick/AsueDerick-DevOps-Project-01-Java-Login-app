@@ -7,7 +7,7 @@ pipeline {
 
     environment {
         NEXUS_CRED = credentials('nexus')
-        DOCKER_CRED_ID = 'docker'
+        DOCKER_CRED = 'docker'
         DOCKER_IMAGE = 'asue1/dptweb'
         BUILD_VERSION = ""
     }
@@ -22,6 +22,7 @@ pipeline {
         stage('Set Version') {
             steps {
                 script {
+                    // Get short Git commit hash
                     def gitCommit = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
                     env.BUILD_VERSION = "1.0.0-${gitCommit}"
                     echo "Build version set to ${env.BUILD_VERSION}"
@@ -29,9 +30,9 @@ pipeline {
             }
         }
 
-        stage('Build') {
+        stage('Build WAR') {
             steps {
-                sh "mvn clean package -DskipTests"
+                sh "mvn clean package -Drevision=${env.BUILD_VERSION} -DskipTests"
             }
         }
 
@@ -57,7 +58,7 @@ pipeline {
         stage('Upload to Nexus') {
             steps {
                 script {
-                    // Detect the generated WAR dynamically
+                    // Detect WAR file dynamically
                     def warFile = sh(script: "ls target/dptweb-*.war", returnStdout: true).trim()
                     echo "Uploading WAR file: ${warFile}"
 
@@ -74,7 +75,7 @@ pipeline {
                         nexusVersion: 'nexus3',
                         protocol: 'http',
                         repository: 'sample',
-                        version: env.BUILD_VERSION
+                        version: "${env.BUILD_VERSION}"
                     )
                 }
             }
@@ -83,14 +84,14 @@ pipeline {
         stage('Build & Push Docker Image') {
             steps {
                 script {
-                    // Detect WAR dynamically
+                    // Detect WAR file dynamically
                     def warFile = sh(script: "ls target/dptweb-*.war", returnStdout: true).trim()
                     
                     // Build Docker image
                     sh "docker build --build-arg WAR_FILE=${warFile} -t ${DOCKER_IMAGE}:${env.BUILD_VERSION} ."
                 }
 
-                withCredentials([usernamePassword(credentialsId: "${docker}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                withCredentials([usernamePassword(credentialsId: "${DOCKER_CRED}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                     sh """
                         echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
                         docker push ${DOCKER_IMAGE}:${env.BUILD_VERSION}
