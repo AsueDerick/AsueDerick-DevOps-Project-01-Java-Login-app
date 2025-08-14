@@ -57,30 +57,30 @@ pipeline {
         }
 
         stage('Upload to Nexus') {
-            steps {
-                script {
-                    // Dynamically find WAR file
-                    def warFile = sh(script: "ls target/dptweb-*.war", returnStdout: true).trim()
-                    echo "Uploading WAR file: ${warFile}"
+    steps {
+        script {
+            def warFile = sh(script: "ls target/dptweb-*.war", returnStdout: true).trim()
+            echo "Uploading WAR file: ${warFile}"
 
-                    nexusArtifactUploader(
-                        artifacts: [[
-                            artifactId: 'dptweb',
-                            classifier: '',
-                            file: warFile,
-                            type: 'war'
-                        ]],
-                        credentialsId: 'nexus',
-                        groupId: 'com.example',
-                        nexusUrl: 'localhost:8081',
-                        nexusVersion: 'nexus3',
-                        protocol: 'http',
-                        repository: 'sample',
-                        version: env.BUILD_VERSION
-                    )
-                }
-            }
+            nexusArtifactUploader(
+                artifacts: [[
+                    artifactId: 'dptweb',
+                    classifier: '',
+                    file: warFile,
+                    type: 'war'
+                ]],
+                credentialsId: 'nexus',
+                groupId: 'com.example',
+                nexusUrl: 'localhost:8081',
+                nexusVersion: 'nexus3',
+                protocol: 'http',
+                repository: 'sample',
+                version: env.BUILD_VERSION
+            )
         }
+    }
+}
+
 
         stage('Build & Push Docker Image') {
             steps {
