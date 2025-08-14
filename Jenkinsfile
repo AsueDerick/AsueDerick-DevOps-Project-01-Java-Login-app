@@ -7,7 +7,7 @@ pipeline {
 
     environment {
         NEXUS_CRED = credentials('nexus')
-        BUILD_VERSION = ""  // Will be set dynamically from Git commit
+        BUILD_VERSION = ""
     }
 
     stages {
@@ -20,7 +20,6 @@ pipeline {
         stage('Set Version') {
             steps {
                 script {
-                    // Get short Git commit hash
                     def gitCommit = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
                     env.BUILD_VERSION = "1.0.0-${gitCommit}"
                     echo "Build version set to ${env.BUILD_VERSION}"
@@ -30,12 +29,11 @@ pipeline {
 
         stage('Build') {
             steps {
-                // Build WAR using Maven with dynamic revision
                 sh "mvn clean package -Drevision=${env.BUILD_VERSION} -DskipTests"
             }
         }
 
-        stage('Test') {
+        stage('Run Tests') {
             steps {
                 sh "mvn test"
             }
@@ -56,21 +54,27 @@ pipeline {
 
         stage('Upload to Nexus') {
             steps {
-                nexusArtifactUploader(
-                    artifacts: [[
-                        artifactId: 'dptweb',
-                        classifier: '',
-                        file: 'target/*.war', // use wildcard to match versioned WAR
-                        type: 'war'
-                    ]],
-                    credentialsId: 'nexus',
-                    groupId: 'com.example',
-                    nexusUrl: 'localhost:8081',
-                    nexusVersion: 'nexus3',
-                    protocol: 'http',
-                    repository: 'sample',
-                    version: "${env.BUILD_VERSION}"
-                )
+                script {
+                    // Find the generated WAR file dynamically
+                    def warFile = sh(script: "ls target/dptweb-*.war", returnStdout: true).trim()
+                    echo "Uploading WAR file: ${warFile}"
+
+                    nexusArtifactUploader(
+                        artifacts: [[
+                            artifactId: 'dptweb',
+                            classifier: '',
+                            file: warFile,
+                            type: 'war'
+                        ]],
+                        credentialsId: 'nexus',
+                        groupId: 'com.example',
+                        nexusUrl: 'localhost:8081',
+                        nexusVersion: 'nexus3',
+                        protocol: 'http',
+                        repository: 'sample',
+                        version: "${env.BUILD_VERSION}"
+                    )
+                }
             }
         }
     }
