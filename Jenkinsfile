@@ -60,7 +60,7 @@ pipeline {
                     artifacts: [[
                         artifactId: 'dptweb',
                         classifier: '',
-                        file: 'target/dptweb-*.war', // use wildcard to match versioned WAR
+                        file: 'target/*.war', // use wildcard to match versioned WAR
                         type: 'war'
                     ]],
                     credentialsId: 'nexus',
