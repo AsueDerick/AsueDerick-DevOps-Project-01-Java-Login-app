@@ -32,6 +32,7 @@ pipeline {
 
         stage('Build WAR') {
             steps {
+                // Use Maven revision property to set project version dynamically
                 sh "mvn clean package -Drevision=${env.BUILD_VERSION} -DskipTests"
             }
         }
@@ -58,7 +59,7 @@ pipeline {
         stage('Upload to Nexus') {
             steps {
                 script {
-                    // Detect WAR file dynamically
+                    // Dynamically find WAR file
                     def warFile = sh(script: "ls target/dptweb-*.war", returnStdout: true).trim()
                     echo "Uploading WAR file: ${warFile}"
 
@@ -75,7 +76,7 @@ pipeline {
                         nexusVersion: 'nexus3',
                         protocol: 'http',
                         repository: 'sample',
-                        version: "${env.BUILD_VERSION}"
+                        version: env.BUILD_VERSION
                     )
                 }
             }

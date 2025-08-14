@@ -10,6 +10,7 @@
 	</parent>
 	<groupId>com.devopsrealtime</groupId>
 	<artifactId>dptweb</artifactId>
+	<version>${revision}</version>
 	<packaging>war</packaging>
 	<name>dptweb</name>
 	<description>DPT DevOps project for Spring Boot</description>
