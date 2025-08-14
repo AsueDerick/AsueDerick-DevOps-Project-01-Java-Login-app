@@ -1,15 +1,22 @@
 provider "aws" {
   region = "ap-southeast-2" 
 }
-# Fetch CloudFormation stack outputs
-data "aws_cloudformation_stack" "vpc" {
-  name = "my-stack"
+# Get VPC ID
+locals {
+  vpc_id = lookup(
+    { for o in data.aws_cloudformation_stack.vpc.outputs : o.OutputKey => o.OutputValue },
+    "VpcId"
+  )
+
+  private_subnets = split(
+    ",",
+    lookup(
+      { for o in data.aws_cloudformation_stack.vpc.outputs : o.OutputKey => o.OutputValue },
+      "SubnetsPrivate"
+    )
+  )
 }
 
-# Extract private subnets as a list
-locals {
-  private_subnets = split(",", data.aws_cloudformation_stack.vpc.outputs["SubnetsPrivate"])
-}
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "~> 21.0"
