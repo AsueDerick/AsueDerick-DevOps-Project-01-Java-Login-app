@@ -2,14 +2,14 @@ pipeline {
     agent any
 
     tools {
-        maven 'maven'
+        maven 'maven' // Jenkins Maven tool name
     }
 
     environment {
         NEXUS_CRED = credentials('nexus')
-        DOCKER_CRED = 'docker'
+        DOCKER_CRED_ID = 'docker'
+        DOCKER_REGISTRY = 'docker.io'
         DOCKER_IMAGE = 'asue1/dptweb'
-        BUILD_VERSION = ""
     }
 
     stages {
@@ -19,21 +19,9 @@ pipeline {
             }
         }
 
-        stage('Set Version') {
-            steps {
-                script {
-                    // Get short Git commit hash
-                    def gitCommit = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
-                    env.BUILD_VERSION = "1.0.0-${gitCommit}"
-                    echo "Build version set to ${env.BUILD_VERSION}"
-                }
-            }
-        }
-
         stage('Build WAR') {
             steps {
-                // Use Maven revision property to set project version dynamically
-                sh "mvn clean package -Drevision=${env.BUILD_VERSION} -DskipTests"
+                sh "mvn clean package -DskipTests"
             }
         }
 
@@ -49,53 +37,49 @@ pipeline {
                     sh """
                         mvn sonar:sonar \
                         -Dsonar.projectKey=JavaLoginApp \
-                        -Dsonar.projectName='Java Login App' \
-                        -Dsonar.projectVersion=${env.BUILD_VERSION}
+                        -Dsonar.projectName='Java Login App'
                     """
                 }
             }
         }
 
         stage('Upload to Nexus') {
-    steps {
-        script {
-            def warFile = sh(script: "ls target/dptweb-*.war", returnStdout: true).trim()
-            echo "Uploading WAR file: ${warFile}"
-
-            nexusArtifactUploader(
-                artifacts: [[
-                    artifactId: 'dptweb',
-                    classifier: '',
-                    file: warFile,
-                    type: 'war'
-                ]],
-                credentialsId: 'nexus',
-                groupId: 'com.example',
-                nexusUrl: 'localhost:8081',
-                nexusVersion: 'nexus3',
-                protocol: 'http',
-                repository: 'sample',
-                version: env.BUILD_VERSION
-            )
-        }
-    }
-}
-
-
-        stage('Build & Push Docker Image') {
             steps {
                 script {
-                    // Detect WAR file dynamically
                     def warFile = sh(script: "ls target/dptweb-*.war", returnStdout: true).trim()
-                    
-                    // Build Docker image
-                    sh "docker build --build-arg WAR_FILE=${warFile} -t ${DOCKER_IMAGE}:${env.BUILD_VERSION} ."
-                }
+                    echo "Uploading WAR file: ${warFile}"
 
-                withCredentials([usernamePassword(credentialsId: "${docker}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    nexusArtifactUploader(
+                        artifacts: [[
+                            artifactId: 'dptweb',
+                            classifier: '',
+                            file: warFile,
+                            type: 'war'
+                        ]],
+                        credentialsId: 'nexus',
+                        groupId: 'com.example',
+                        nexusUrl: 'localhost:8081',
+                        nexusVersion: 'nexus3',
+                        protocol: 'http',
+                        repository: 'sample',
+                        version: ''  // Uses the version from POM
+                    )
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh "docker build --build-arg WAR_FILE=target/dptweb-*.war -t ${DOCKER_IMAGE}:latest ."
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: "${DOCKER_CRED_ID}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                     sh """
                         echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-                        docker push ${DOCKER_IMAGE}:${env.BUILD_VERSION}
+                        docker push ${DOCKER_IMAGE}:latest
                         docker logout
                     """
                 }
