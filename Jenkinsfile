@@ -26,7 +26,7 @@ pipeline {
                     if (env.BRANCH_NAME == 'main') {
                         env.APP_VERSION = "1.0.${env.BUILD_NUMBER}"
                     } else {
-                        env.APP_VERSION = "1.0.0-SNAPSHOT"
+                        env.APP_VERSION = '1.0.0-SNAPSHOT'
                     }
                     sh "mvn versions:set -DnewVersion=${env.APP_VERSION}"
                 }
@@ -35,13 +35,13 @@ pipeline {
 
         stage('Build WAR') {
             steps {
-                sh "mvn clean package -DskipTests"
+                sh 'mvn clean package -DskipTests'
             }
         }
 
         stage('Run Tests') {
             steps {
-                sh "mvn test"
+                sh 'mvn test'
             }
         }
 
@@ -102,8 +102,8 @@ pipeline {
                 dir('terraform') {
                     withCredentials([usernamePassword(credentialsId: 'aws-creds', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
                         sh 'terraform init'
-                        // sh 'terraform plan -out=tfplan'
-                        // sh 'terraform apply -auto-approve tfplan'
+                    // sh 'terraform plan -out=tfplan'
+                    // sh 'terraform apply -auto-approve tfplan'
                     }
                 }
             }
@@ -119,10 +119,10 @@ pipeline {
                             --template-url https://s3.us-west-2.amazonaws.com/amazon-eks/cloudformation/2020-10-29/amazon-eks-ipv6-vpc-public-private-subnets.yaml \\
                             --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
 
-                        PUBLIC_SUBNETS=$(aws cloudformation describe-stacks --region ap-southeast-2 --stack-name eks-ipv6-vpc --query "Stacks[].Outputs[?OutputKey=='SubnetsPublic'].OutputValue" --output text)
-                        for subnet in $(echo \$PUBLIC_SUBNETS | tr ',' ' '); do
-                            aws ec2 modify-subnet-attribute --region ap-southeast-2 --subnet-id \$subnet --assign-ipv6-address-on-creation
-                        done
+                        PUBLIC_SUBNETS=\$(aws cloudformation describe-stacks --region ap-southeast-2 --stack-name eks-ipv6-vpc --query "Stacks[].Outputs[?OutputKey=='SubnetsPublic'].OutputValue" --output text)
+                for subnet in \$(echo \$PUBLIC_SUBNETS | tr ',' ' '); do
+                    aws ec2 modify-subnet-attribute --region ap-southeast-2 --subnet-id \$subnet --assign-ipv6-address-on-creation
+                done
                     """
                 }
             }
