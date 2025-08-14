@@ -94,7 +94,7 @@ pipeline {
 
     post {
         always {
-            archiveArtifacts artifacts: 'target/*.war', allowEmptyArchive: true
+            archiveArtifacts artifacts: 'target/dptweb-*.war', allowEmptyArchive: true
             junit 'target/surefire-reports/*.xml'
         }
     }
