@@ -10,7 +10,7 @@ pipeline {
         DOCKER_CRED_ID  = 'docker'
         DOCKER_REGISTRY = 'docker.io'
         DOCKER_IMAGE    = 'asue1/dptweb'
-        AWS_REGION     = 'ap-southeast-2'
+        AWS_REGION      = 'ap-southeast-2'
     }
 
     stages {
@@ -88,7 +88,11 @@ pipeline {
 
         stage('Push Docker Image') {
             steps {
-                withCredentials([usernamePassword(credentialsId: "${DOCKER_CRED_ID}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                withCredentials([usernamePassword(
+                    credentialsId: "${DOCKER_CRED_ID}",
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
                     sh """
                         echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
                         docker push ${DOCKER_IMAGE}:${env.APP_VERSION}
@@ -100,7 +104,11 @@ pipeline {
 
         stage('Terraform Apply') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'aws-creds', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                withCredentials([usernamePassword(
+                    credentialsId: 'aws-creds',
+                    usernameVariable: 'AWS_ACCESS_KEY_ID',
+                    passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                )]) {
                     sh 'terraform init'
                     // sh 'terraform plan -out=tfplan'
                     // sh 'terraform apply -auto-approve tfplan'
@@ -109,20 +117,25 @@ pipeline {
             }
         }
 
-    //     stage('Provision IPv6 VPC') {
-    //         steps {
-    //             withCredentials([usernamePassword(credentialsId: 'aws-creds', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
-    //                 sh """
-    //                     aws cloudformation deploy \
-    //                         --template-file amazon-eks-ipv6-vpc-public-private-subnets.yaml \
-    //                         --stack-name my-stack \
-    //                         --region ${AWS_REGION} \
-    //                         --capabilities CAPABILITY_NAMED_IAM
-    //                 """
-    //             }
+    // Uncomment if you want to deploy IPv6 VPC via CloudFormation
+    // stage('Provision IPv6 VPC') {
+    //     steps {
+    //         withCredentials([usernamePassword(
+    //             credentialsId: 'aws-creds',
+    //             usernameVariable: 'AWS_ACCESS_KEY_ID',
+    //             passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+    //         )]) {
+    //             sh """
+    //                 aws cloudformation deploy \
+    //                     --template-file amazon-eks-ipv6-vpc-public-private-subnets.yaml \
+    //                     --stack-name my-stack \
+    //                     --region ${AWS_REGION} \
+    //                     --capabilities CAPABILITY_NAMED_IAM
+    //             """
     //         }
     //     }
     // }
+    }
 
     post {
         always {
@@ -130,5 +143,4 @@ pipeline {
             junit 'target/surefire-reports/*.xml'
         }
     }
-}
 }
