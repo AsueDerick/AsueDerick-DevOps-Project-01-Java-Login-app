@@ -12,7 +12,7 @@ pipeline {
         DOCKER_IMAGE = 'asue1/dptweb'
         DOCKER_CRED_ID = 'docker'
 
-        // Versioning: from Git commit short SHA + Jenkins build number
+        // Versioning: will be set dynamically from Git + Jenkins build number
         VERSION = ""
     }
 
@@ -22,19 +22,22 @@ pipeline {
                 script {
                     git url: 'https://github.com/AsueDerick/AsueDerick-DevOps-Project-01-Java-Login-app.git', branch: 'main'
                     def commitHash = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
-                    VERSION = "${commitHash}-${env.BUILD_NUMBER}"
-                    echo "Build Version: ${VERSION}"
+                    env.VERSION = "${commitHash}-${env.BUILD_NUMBER}"
+                    echo "Build Version: ${env.VERSION}"
                 }
             }
         }
 
-        stage('Build') {
+        stage('Build WAR') {
             steps {
-                sh "mvn clean package -DskipTests"
+                script {
+                    // Build WAR with Maven and dynamic revision
+                    sh "mvn clean package -Drevision=${env.VERSION} -DskipTests"
+                }
             }
         }
 
-        stage('Test') {
+        stage('Run Tests') {
             steps {
                 sh "mvn test"
             }
@@ -59,12 +62,12 @@ pipeline {
                     artifacts: [[
                         artifactId: 'dptweb',
                         classifier: '',
-                        file: 'target/dptweb-${VERSION}.war',
+                        file: 'target/dptweb-*.war',  // wildcard for generated WAR
                         type: 'war'
                     ]],
                     credentialsId: 'nexus',
                     groupId: 'com.example',
-                    nexusUrl: 'localhost:8081', // Change to your Nexus server IP
+                    nexusUrl: 'localhost:8081', // change if needed
                     nexusVersion: 'nexus3',
                     protocol: 'http',
                     repository: 'sample',
@@ -75,7 +78,7 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh "docker build -t ${DOCKER_IMAGE}:${VERSION} ."
+                sh "docker build --build-arg WAR_FILE=target/dptweb-*.war -t ${DOCKER_IMAGE}:${VERSION} ."
             }
         }
 
