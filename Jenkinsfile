@@ -59,7 +59,7 @@ pipeline {
                     artifacts: [[
                         artifactId: 'dptweb',
                         classifier: '',
-                        file: 'target/*.war',
+                        file: 'target/dptweb-*.war',
                         type: 'war'
                     ]],
                     credentialsId: 'nexus',
