@@ -26,8 +26,8 @@ module "eks" {
   enable_cluster_creator_admin_permissions = true
 
   vpc_id                   = "vpc-01d0174d48c38b0b0"
-  subnet_ids               = ["subnet-00204f0b235aac750","subnet-04466e1770d3f493d"]
-  control_plane_subnet_ids = ["subnet-00204f0b235aac750","subnet-04466e1770d3f493d"]
+  subnet_ids               = ["subnet-0dea324a0b556f7d7","ssubnet-080409abd081ccbb7"]
+  control_plane_subnet_ids = ["subnet-0dea324a0b556f7d7","subnet-080409abd081ccbb7"]
 
   # EKS Managed Node Group(s)
   eks_managed_node_groups = {
