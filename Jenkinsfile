@@ -6,10 +6,10 @@ pipeline {
     }
 
     environment {
-        NEXUS_CRED       = credentials('nexus')
-        DOCKER_CRED_ID   = 'docker'
-        DOCKER_REGISTRY  = 'docker.io'
-        DOCKER_IMAGE     = 'asue1/dptweb'
+        NEXUS_CRED      = credentials('nexus')
+        DOCKER_CRED_ID  = 'docker'
+        DOCKER_REGISTRY = 'docker.io'
+        DOCKER_IMAGE    = 'asue1/dptweb'
     }
 
     stages {
@@ -92,6 +92,37 @@ pipeline {
                         echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
                         docker push ${DOCKER_IMAGE}:${env.APP_VERSION}
                         docker logout
+                    """
+                }
+            }
+        }
+
+        stage('Terraform Apply') {
+            steps {
+                dir('terraform') {
+                    withCredentials([usernamePassword(credentialsId: 'aws-creds', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                        sh 'terraform init'
+                        // sh 'terraform plan -out=tfplan'
+                        // sh 'terraform apply -auto-approve tfplan'
+                    }
+                }
+            }
+        }
+
+        stage('Provision IPv6 VPC') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'aws-creds', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                    sh """
+                        aws cloudformation deploy \\
+                            --region ap-southeast-2 \\
+                            --stack-name eks-ipv6-vpc \\
+                            --template-url https://s3.us-west-2.amazonaws.com/amazon-eks/cloudformation/2020-10-29/amazon-eks-ipv6-vpc-public-private-subnets.yaml \\
+                            --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
+
+                        PUBLIC_SUBNETS=$(aws cloudformation describe-stacks --region ap-southeast-2 --stack-name eks-ipv6-vpc --query "Stacks[].Outputs[?OutputKey=='SubnetsPublic'].OutputValue" --output text)
+                        for subnet in $(echo $PUBLIC_SUBNETS | tr ',' ' '); do
+                            aws ec2 modify-subnet-attribute --region ap-southeast-2 --subnet-id $subnet --assign-ipv6-address-on-creation
+                        done
                     """
                 }
             }
