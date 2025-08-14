@@ -25,7 +25,7 @@ module "eks" {
   # Optional: Adds the current caller identity as an administrator via cluster access entry
   enable_cluster_creator_admin_permissions = true
 
-  vpc_id                   = "vpc-01d0174d48c38b0b0"
+  vpc_id                   = "vpc-0f4e274fe05ddcbe8"
   subnet_ids               = ["subnet-0dea324a0b556f7d7","ssubnet-080409abd081ccbb7"]
   control_plane_subnet_ids = ["subnet-0dea324a0b556f7d7","subnet-080409abd081ccbb7"]
 
