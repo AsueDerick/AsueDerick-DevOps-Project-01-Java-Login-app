@@ -102,7 +102,7 @@ pipeline {
             }
         }
 
-        stage('Terraform Apply') {
+        stage('Terraform Apply and Deploy to EKS') {
             steps {
                 withCredentials([usernamePassword(
                     credentialsId: 'aws-creds',
@@ -112,16 +112,8 @@ pipeline {
                     sh 'terraform init'
                     sh 'terraform plan -out=tfplan.binary'
                     sh 'terraform apply -auto-approve tfplan.binary'
-                }
-            }
-        }
-        stage('Deploy to EKS') {
-            steps {
-                script {
-                    sh '''
-                        aws eks --region ap-southeast-2 update-kubeconfig --name my-cluster
-                        kubectl apply -f nginx-deployment.yaml
-                    '''
+                    sh 'aws eks --region ap-southeast-2 update-kubeconfig --name my-cluster'
+                    sh 'kubectl apply -f nginx-deployment.yaml'
                 }
             }
         }
