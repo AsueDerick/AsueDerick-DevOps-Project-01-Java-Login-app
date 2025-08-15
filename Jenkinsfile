@@ -100,7 +100,11 @@ pipeline {
                     // sh 'terraform destroy -target=module.eks.module.eks_managed_node_group -auto-approve'
                     sh 'terraform plan -out=tfplan.binary'
                     sh 'terraform apply -auto-approve tfplan.binary'
-                    sh 'aws eks --region ap-southeast-2 update-kubeconfig --name my-cluster'
+                    sh '''#!/bin/bash
+                        aws eks --region ap-southeast-2 update-kubeconfig --name my-cluster
+                        kubectl get nodes
+                    '''
+                    aws eks --region ap-southeast-2 update-kubeconfig --name my-cluster'
                 }
             }
         }
@@ -139,7 +143,8 @@ pipeline {
         stage('Deploy to EKS') {
             steps {
                 script {
-                    sh 'kubectl apply -f deployment.yaml'
+                    sh """#!/bin/bash
+                    kubectl apply -f deployment.yaml"""
                 }
             }
         }
