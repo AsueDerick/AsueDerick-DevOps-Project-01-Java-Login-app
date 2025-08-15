@@ -101,24 +101,25 @@ pipeline {
                         export AWS_DEFAULT_REGION=${AWS_REGION}
 
                         terraform init
-                        terraform plan -out=tfplan.binary
-                        terraform apply -auto-approve tfplan.binary
+                        terraform destroy -auto-approve
+                        // terraform plan -out=tfplan.binary
+                        // terraform apply -auto-approve tfplan.binary
 
-                        aws eks update-kubeconfig --region $AWS_DEFAULT_REGION --name my-cluster
-                        kubectl get nodes
+                    // aws eks update-kubeconfig --region $AWS_DEFAULT_REGION --name my-cluster
+                    // kubectl get nodes
                     '''
                 }
             }
         }
-        stage('Set Env Vars from Terraform') {
-            steps {
-                script {
-                    env.RDS_ENDPOINT = sh(script: 'terraform output -raw rds_endpoint', returnStdout: true).trim()
-                    env.RDS_NAME     = sh(script: 'terraform output -raw rds_name', returnStdout: true).trim()
-                    env.RDS_PORT     = sh(script: 'terraform output -raw rds_port', returnStdout: true).trim()
-                }
-            }
-        }
+        // stage('Set Env Vars from Terraform') {
+        //     steps {
+        //         script {
+        //             env.RDS_ENDPOINT = sh(script: 'terraform output -raw rds_endpoint', returnStdout: true).trim()
+        //             env.RDS_NAME     = sh(script: 'terraform output -raw rds_name', returnStdout: true).trim()
+        //             env.RDS_PORT     = sh(script: 'terraform output -raw rds_port', returnStdout: true).trim()
+        //         }
+        //     }
+        // }
 
         stage('Build Docker Image') {
             steps {
