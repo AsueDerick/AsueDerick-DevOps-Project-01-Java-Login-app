@@ -96,16 +96,6 @@ pipeline {
             }
         }
 
-        stage('Set DB Env Variables') {
-            steps {
-                script {
-                    env.DB_HOST = sh(script: 'terraform output -raw rds_endpoint', returnStdout: true).trim()
-                    env.DB_USER = sh(script: 'terraform output -raw rds_username', returnStdout: true).trim()
-                    env.DB_PASS = sh(script: 'terraform output -raw rds_password', returnStdout: true).trim()
-                }
-            }
-        }
-
         stage('Build Docker Image') {
             steps {
                 sh "docker build --build-arg WAR_FILE=target/dptweb-${env.APP_VERSION}.war -t ${DOCKER_IMAGE}:${env.APP_VERSION} ."
