@@ -110,6 +110,15 @@ pipeline {
                 }
             }
         }
+        stage('Set Env Vars from Terraform') {
+            steps {
+                script {
+                    env.RDS_ENDPOINT = sh(script: 'terraform output -raw rds_endpoint', returnStdout: true).trim()
+                    env.RDS_NAME     = sh(script: 'terraform output -raw rds_name', returnStdout: true).trim()
+                    env.RDS_PORT     = sh(script: 'terraform output -raw rds_port', returnStdout: true).trim()
+                }
+            }
+        }
 
         stage('Build Docker Image') {
             steps {
@@ -152,16 +161,6 @@ pipeline {
                     sh '''#!/bin/bash
                     kubectl apply -f deployment.yaml
                 '''
-                }
-            }
-        }
-
-        stage('Set Env Vars from Terraform') {
-            steps {
-                script {
-                    env.RDS_ENDPOINT = sh(script: 'terraform output -raw rds_endpoint', returnStdout: true).trim()
-                    env.RDS_NAME     = sh(script: 'terraform output -raw rds_name', returnStdout: true).trim()
-                    env.RDS_PORT     = sh(script: 'terraform output -raw rds_port', returnStdout: true).trim()
                 }
             }
         }
