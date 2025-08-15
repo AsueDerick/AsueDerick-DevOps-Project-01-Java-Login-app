@@ -1,12 +1,10 @@
 variable "vpc_id" {}
-variable "private_subnets" {
-  type = list(string)
-}
+variable "private_subnet" {}
 variable "vpc_sg_id" {}
 
 resource "aws_db_subnet_group" "rds_subnets" {
   name       = "rds-subnet-group"
-  subnet_ids = var.private_subnets
+  subnet_ids = var.private_subnet
   tags = {
     Name = "rds-subnet-group"
   }
