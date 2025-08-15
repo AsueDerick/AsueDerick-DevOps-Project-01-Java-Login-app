@@ -123,12 +123,23 @@ pipeline {
                         docker tag ${DOCKER_IMAGE}:${env.APP_VERSION} ${DOCKER_IMAGE}:${env.APP_VERSION}
                         docker push ${DOCKER_IMAGE}:${env.APP_VERSION}
                         docker logout
-                        sudo trivy image ${DOCKER_IMAGE}:${env.APP_VERSION}
                     """
                 }
             }
         }
-
+        stage('scan Docker Image with Trivy') {
+            steps {
+                script {
+                    sh """
+                        trivy image --cache-dir ${env.TRIVY_CACHE_DIR} \
+                        --config ${env.TRIVY_CONFIG_DIR}/trivy-config.yaml \
+                        --severity HIGH,CRITICAL \
+                        --exit-code 1 \
+                        ${DOCKER_IMAGE}:${env.APP_VERSION}
+                    """
+                }
+            }
+        }
         stage('Deploy to EKS') {
             steps {
                 script {
