@@ -1,4 +1,4 @@
-variable "vpc_sg_id" {}
+
 
 resource "aws_db_subnet_group" "rds_subnets" {
   name       = "rds-subnet-group"
