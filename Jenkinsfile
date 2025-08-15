@@ -23,7 +23,6 @@ pipeline {
         stage('Set Build Version') {
             steps {
                 script {
-                    // For dev builds, use SNAPSHOT; for releases, bump version with build number
                     if (env.BRANCH_NAME == 'main') {
                         env.APP_VERSION = "1.0.${env.BUILD_NUMBER}"
                     } else {
@@ -83,7 +82,7 @@ pipeline {
         stage('Set Env Vars') {
             steps {
                 script {
-                    env.TRIVY_CACHE_DIR = '/tmp/.trivy/cache'
+                    env.TRIVY_CACHE_DIR  = '/tmp/.trivy/cache'
                     env.TRIVY_CONFIG_DIR = '/tmp/.trivy/config'
                 }
             }
@@ -96,15 +95,18 @@ pipeline {
                     usernameVariable: 'AWS_ACCESS_KEY_ID',
                     passwordVariable: 'AWS_SECRET_ACCESS_KEY'
                 )]) {
-                    sh 'terraform init'
-                    // sh 'terraform destroy -target=module.eks.module.eks_managed_node_group -auto-approve'
-                    sh 'terraform plan -out=tfplan.binary'
-                    sh 'terraform apply -auto-approve tfplan.binary'
                     sh '''#!/bin/bash
-                        aws eks --region ap-southeast-2 update-kubeconfig --name my-cluster
+                        export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+                        export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+                        export AWS_DEFAULT_REGION=${AWS_REGION}
+
+                        terraform init
+                        terraform plan -out=tfplan.binary
+                        terraform apply -auto-approve tfplan.binary
+
+                        aws eks update-kubeconfig --region $AWS_DEFAULT_REGION --name my-cluster
                         kubectl get nodes
                     '''
-                    aws eks --region ap-southeast-2 update-kubeconfig --name my-cluster'
                 }
             }
         }
@@ -122,30 +124,29 @@ pipeline {
                     usernameVariable: 'DOCKER_USER',
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
-                    sh """
-                        echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin
+                    sh '''#!/bin/bash
+                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
                         docker tag ${DOCKER_IMAGE}:${env.APP_VERSION} ${DOCKER_IMAGE}:${env.APP_VERSION}
                         docker push ${DOCKER_IMAGE}:${env.APP_VERSION}
                         docker logout
-                    """
+                    '''
                 }
             }
         }
 
         stage('Scan Docker Image with Trivy') {
             steps {
-                sh """#!/bin/bash
+                sh '''#!/bin/bash
                     trivy image ${DOCKER_IMAGE}:${env.APP_VERSION}
-                """
+                '''
             }
         }
 
         stage('Deploy to EKS') {
             steps {
-                script {
-                    sh """#!/bin/bash
-                    kubectl apply -f deployment.yaml"""
-                }
+                sh '''#!/bin/bash
+                    kubectl apply -f deployment.yaml
+                '''
             }
         }
     }
