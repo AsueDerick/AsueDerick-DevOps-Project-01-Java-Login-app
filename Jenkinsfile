@@ -144,9 +144,15 @@ pipeline {
 
         stage('Deploy to EKS') {
             steps {
-                sh '''#!/bin/bash
+                withCredentials([usernamePassword(
+                    credentialsId: 'aws-creds',
+                    usernameVariable: 'AWS_ACCESS_KEY_ID',
+                    passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                )]) {
+                    sh '''#!/bin/bash
                     kubectl apply -f deployment.yaml
                 '''
+                }
             }
         }
     }
