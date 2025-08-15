@@ -1,3 +1,4 @@
+
 pipeline {
     agent any
 
@@ -79,8 +80,27 @@ pipeline {
                 }
             }
         }
+   
 
-        stage('Build Docker Image') {
+        stage('Terraform Apply and Deploy to EKS') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'aws-creds',
+                    usernameVariable: 'AWS_ACCESS_KEY_ID',
+                    passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                )]) {
+                    sh 'terraform init'
+                    sh 'terraform destroy -auto-approve'
+                    sh 'terraform apply -auto-approve tfplan.binary'
+                    env.DB_HOST = sh(script: 'terraform output -raw rds_endpoint', returnStdout: true).trim()
+                    env.DB_USER = sh(script: 'terraform output -raw rds_username', returnStdout: true).trim()
+                    env.DB_PASS = sh(script: 'terraform output -raw rds_password', returnStdout: true).trim()
+                    sh 'aws eks --region ap-southeast-2 update-kubeconfig --name my-cluster'
+                }
+            }
+        }
+
+      stage('Build Docker Image') {
             steps {
                 sh "docker build --build-arg WAR_FILE=target/dptweb-${env.APP_VERSION}.war -t ${DOCKER_IMAGE}:${env.APP_VERSION} ."
             }
@@ -95,28 +115,23 @@ pipeline {
                 )]) {
                     sh """
                         echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                        docker tag ${DOCKER_IMAGE}:${env.APP_VERSION} ${DOCKER_IMAGE}:${env.APP_VERSION}
                         docker push ${DOCKER_IMAGE}:${env.APP_VERSION}
                         docker logout
+                        trivy image ${DOCKER_IMAGE}:${env.APP_VERSION}
                     """
                 }
             }
         }
 
-        stage('Terraform Apply and Deploy to EKS') {
+        stage('Deploy to EKS') {
             steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'aws-creds',
-                    usernameVariable: 'AWS_ACCESS_KEY_ID',
-                    passwordVariable: 'AWS_SECRET_ACCESS_KEY'
-                )]) {
-                    // sh 'terraform init'
-                    sh 'terraform destroy -auto-approve'
-                    // sh 'terraform apply -auto-approve tfplan.binary'
-                    // sh 'aws eks --region ap-southeast-2 update-kubeconfig --name my-cluster'
-                    // sh 'kubectl apply -f nginx-deployment.yaml'
+                script {
+                         sh 'kubectl apply -f nginx-deployment.yaml'    
                 }
             }
-        }
+        }   
+
     }
 
     post {

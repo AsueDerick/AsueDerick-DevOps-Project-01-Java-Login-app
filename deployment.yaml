@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: asue1-dptweb-deployment
+  labels:
+    app: asue1-dptweb
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: asue1-dptweb
+  template:
+    metadata:
+      labels:
+        app: asue1-dptweb
+    spec:
+      containers:
+        - name: asue1-dptweb-container
+          image: asue1/dptweb:1.0.0-SNAPSHOT
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "250m"
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            failureThreshold: 3
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dptweb-service
+spec:
+  selector:
+    app: asue1-dptweb   # matches Deployment's label
+  ports:
+    - protocol: TCP
+      port: 80          # external port
+      targetPort: 8080  # container's port
+  type: LoadBalancer
