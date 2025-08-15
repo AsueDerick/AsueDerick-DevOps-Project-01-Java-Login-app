@@ -44,12 +44,13 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: dptweb-service
+  name: asue1-dptweb-service
 spec:
-  selector:
-    app: asue1-dptweb   # matches Deployment's label
+  type: NodePort
   ports:
-    - protocol: TCP
-      port: 80          # external port
-      targetPort: 8080  # container's port
-  type: LoadBalancer
+    - port: 80
+      targetPort: 8080
+      nodePort: 30080  # Node's external port
+  selector:
+    app: asue1-dptweb
+
