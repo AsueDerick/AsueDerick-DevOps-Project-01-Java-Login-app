@@ -5,7 +5,7 @@ metadata:
   labels:
     app: asue1-dptweb
 spec:
-  replicas: 4
+  replicas: 1
   selector:
     matchLabels:
       app: asue1-dptweb
