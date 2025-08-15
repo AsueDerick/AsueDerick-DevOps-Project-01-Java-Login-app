@@ -24,3 +24,12 @@ resource "aws_security_group" "rds_postgres_sg" {
         CreatedOn   = "2025-07-24"
     }
 }
+variable "public_subnets" {}
+variable "azs" {}
+resource "aws_subnet" "public_subnets" {
+  count                   = length(var.public_subnets)
+  vpc_id                  = module.myapp-vpc.vpc_id
+  cidr_block              = var.public_subnets[count.index]
+  map_public_ip_on_launch = true    # <-- This enables auto-assign public IP
+  availability_zone       = var.azs[count.index % length(var.azs)]
+}
