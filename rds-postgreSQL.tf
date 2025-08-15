@@ -20,7 +20,7 @@ module "rds_postgres" {
   
 
   publicly_accessible    = false
-  vpc_security_group_ids = [module.myapp-vpc.default_security_group_id]
+  vpc_security_group_ids = [module.eks.cluster_security_group_id]
   subnet_ids             = module.myapp-vpc.private_subnets
 
   skip_final_snapshot = true
