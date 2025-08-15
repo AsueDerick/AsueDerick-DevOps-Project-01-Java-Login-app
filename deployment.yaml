@@ -26,20 +26,6 @@ spec:
             limits:
               memory: "128Mi"
               cpu: "500m"
-          readinessProbe:
-            httpGet:
-              path: /actuator/health
-              port: 8080
-            initialDelaySeconds: 20
-            periodSeconds: 10
-            failureThreshold: 3
-          livenessProbe:
-            httpGet:
-              path: /actuator/health
-              port: 8080
-            initialDelaySeconds: 60
-            periodSeconds: 30
-            failureThreshold: 3
 
 ---
 apiVersion: v1
