@@ -139,7 +139,7 @@ pipeline {
         stage('Deploy to EKS') {
             steps {
                 script {
-                    sh 'kubectl apply -f nginx-deployment.yaml'
+                    sh 'kubectl apply -f deployment.yaml'
                 }
             }
         }
