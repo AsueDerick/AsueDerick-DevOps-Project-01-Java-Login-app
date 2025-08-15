@@ -24,6 +24,7 @@ module "myapp-vpc" {
   single_nat_gateway = true
   enable_dns_hostnames = true
   enable_dns_support = true
+  map_public_ip_on_launch = true
   tags = {
     "kubernetes.io/cluster/myapp" = "shared"
     "Name" = var.name
@@ -38,7 +39,6 @@ module "myapp-vpc" {
   public_subnet_tags = {
     "kubernetes.io/role/external-elb" = "1"
     "kubernetes.io/cluster/myapp-eks-cluster" = "shared" 
-    "map_public_ip_on_launch" = "true"
     }
     private_subnet_tags = {
     "kubernetes.io/role/internal-elb" = "1"
