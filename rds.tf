@@ -11,7 +11,7 @@ resource "aws_db_subnet_group" "rds_subnets" {
 resource "aws_db_instance" "postgres" {
   identifier              = "my-postgres-db"
   engine                  = "postgres"
-  engine_version          = "15.3"  # adjust as needed
+  engine_version          = "15.7"  # adjust as needed
   instance_class          = "db.t3.medium"
   allocated_storage       = 20
   storage_type            = "gp2"
