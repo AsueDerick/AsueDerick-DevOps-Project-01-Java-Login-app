@@ -97,7 +97,7 @@ pipeline {
                     passwordVariable: 'AWS_SECRET_ACCESS_KEY'
                 )]) {
                     sh 'terraform init'
-                    sh 'terraform destroy -target=module.eks.module.eks_managed_node_group -auto-approve'
+                    // sh 'terraform destroy -target=module.eks.module.eks_managed_node_group -auto-approve'
                     sh 'terraform plan -out=tfplan.binary'
                     sh 'terraform apply -auto-approve tfplan.binary'
                     sh 'aws eks --region ap-southeast-2 update-kubeconfig --name my-cluster'
