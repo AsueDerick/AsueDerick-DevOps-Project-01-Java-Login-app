@@ -129,7 +129,6 @@ pipeline {
         }
         stage('scan Docker Image with Trivy') {
             steps {
-                script {
                     sh '''
                     trivy image ${DOCKER_IMAGE}:${env.APP_VERSION}
                     '''
