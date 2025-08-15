@@ -89,9 +89,10 @@ pipeline {
                     passwordVariable: 'AWS_SECRET_ACCESS_KEY'
                 )]) {
                     sh 'terraform init'
-                    sh 'terraform plan -out=tfplan.binary'
-                    sh 'terraform apply -auto-approve tfplan.binary'
-                    sh 'aws eks --region ap-southeast-2 update-kubeconfig --name my-cluster'
+                    sh 'terraform destroy -auto-approve'
+                    // sh 'terraform plan -out=tfplan.binary'
+                    // sh 'terraform apply -auto-approve tfplan.binary'
+                    // sh 'aws eks --region ap-southeast-2 update-kubeconfig --name my-cluster'
                 }
             }
         }
