@@ -155,6 +155,16 @@ pipeline {
                 }
             }
         }
+
+        stage('Set Env Vars from Terraform') {
+            steps {
+                script {
+                    env.RDS_ENDPOINT = sh(script: 'terraform output -raw rds_endpoint', returnStdout: true).trim()
+                    env.RDS_NAME     = sh(script: 'terraform output -raw rds_name', returnStdout: true).trim()
+                    env.RDS_PORT     = sh(script: 'terraform output -raw rds_port', returnStdout: true).trim()
+                }
+            }
+        }
     }
 
     post {
