@@ -84,9 +84,6 @@ pipeline {
         stage('Set Env Vars') {
             steps {
                 script {
-                    env.VPC_ID = sh(script: 'terraform output -raw vpc_id', returnStdout: true).trim()
-                    env.PRIVATE_SUBNETS = sh(script: 'terraform output -raw private_subnets', returnStdout: true).trim()
-                    env.VPC_SG_ID = sh(script: 'terraform output -raw vpc_security_group_id', returnStdout: true).trim()
                     env.TRIVY_CACHE_DIR = '/tmp/.trivy/cache'
                     env.TRIVY_CONFIG_DIR = '/tmp/.trivy/config'
                 }
@@ -101,12 +98,7 @@ pipeline {
                 )]) {
                     sh 'terraform init'
                     sh 'terraform plan -out=tfplan.binary'
-                    sh '''
-                  terraform apply -auto-approve \
-                    -var "vpc_id=$VPC_ID" \
-                    -var "private_subnet=[$PRIVATE_SUBNETS]" \
-                    -var "vpc_sg_id=$VPC_SG_ID"
-                '''
+                    sh 'terraform apply -auto-approve tfplan.binary'
                     sh 'aws eks --region ap-southeast-2 update-kubeconfig --name my-cluster'
                 }
             }
