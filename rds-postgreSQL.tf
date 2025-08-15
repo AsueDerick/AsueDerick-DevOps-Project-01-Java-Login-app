@@ -1,6 +1,5 @@
 
 variable "rds_username" {}
-variable "rds_password" {}
 variable "rds_port" {}
 
 module "rds_postgres" {
@@ -16,15 +15,16 @@ module "rds_postgres" {
 
   db_name     = "myappdb" 
   username = var.rds_username
-  password = var.rds_password
+  manage_master_user_password = true
   port     = var.rds_port 
   
 
   publicly_accessible    = false
   vpc_security_group_ids = [module.myapp-vpc.default_security_group_id]
-  subnet_ids             = module.vpc.private_subnets
+  subnet_ids             = module.myapp-vpc.private_subnets
 
   skip_final_snapshot = true
+  family = "postgres15"
 }
 
 
