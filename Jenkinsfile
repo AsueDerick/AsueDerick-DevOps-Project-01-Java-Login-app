@@ -89,7 +89,7 @@ pipeline {
                 }
             }
         }
-        stage('Terraform Apply and Deploy to EKS') {
+        stage('Terraform Apply') {
             steps {
                 withCredentials([usernamePassword(
                     credentialsId: 'aws-creds',
@@ -123,7 +123,7 @@ pipeline {
                         docker tag ${DOCKER_IMAGE}:${env.APP_VERSION} ${DOCKER_IMAGE}:${env.APP_VERSION}
                         docker push ${DOCKER_IMAGE}:${env.APP_VERSION}
                         docker logout
-                        trivy image ${DOCKER_IMAGE}:${env.APP_VERSION}
+                        sudo trivy image ${DOCKER_IMAGE}:${env.APP_VERSION}
                     """
                 }
             }
