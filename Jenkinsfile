@@ -1,4 +1,3 @@
-
 pipeline {
     agent any
 
@@ -89,6 +88,7 @@ pipeline {
                 }
             }
         }
+
         stage('Terraform Apply') {
             steps {
                 withCredentials([usernamePassword(
@@ -119,7 +119,7 @@ pipeline {
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
                     sh """
-                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                        echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin
                         docker tag ${DOCKER_IMAGE}:${env.APP_VERSION} ${DOCKER_IMAGE}:${env.APP_VERSION}
                         docker push ${DOCKER_IMAGE}:${env.APP_VERSION}
                         docker logout
@@ -127,14 +127,15 @@ pipeline {
                 }
             }
         }
-        stage('scan Docker Image with Trivy') {
+
+        stage('Scan Docker Image with Trivy') {
             steps {
-                    sh '''
+                sh """#!/bin/bash
                     trivy image ${DOCKER_IMAGE}:${env.APP_VERSION}
-                    '''
-                }
+                """
             }
         }
+
         stage('Deploy to EKS') {
             steps {
                 script {
