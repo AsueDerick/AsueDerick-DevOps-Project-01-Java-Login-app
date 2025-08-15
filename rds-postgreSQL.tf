@@ -1,8 +1,3 @@
-provider "aws" {
-  region = "ap-southeast-2" 
-  
-}
-
 
 variable "rds_username" {}
 variable "rds_password" {}
