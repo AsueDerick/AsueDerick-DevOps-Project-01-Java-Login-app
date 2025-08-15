@@ -9,7 +9,7 @@ module "rds_postgres" {
   identifier = "my-postgres-db"
 
   engine            = "postgres"
-  engine_version    = "14.7"
+  engine_version    = "14.17"
   instance_class    = "db.t3.micro"
   allocated_storage = 20
 

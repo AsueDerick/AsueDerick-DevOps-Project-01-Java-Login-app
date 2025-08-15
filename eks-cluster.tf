@@ -40,7 +40,7 @@ module "eks" {
 
   # Optional: Adds the current caller identity as an administrator via cluster access entry
   enable_cluster_creator_admin_permissions = true
-
+  
   vpc_id                   = module.myapp-vpc.vpc_id
   subnet_ids               = concat(module.myapp-vpc.private_subnets, module.myapp-vpc.public_subnets)
 
